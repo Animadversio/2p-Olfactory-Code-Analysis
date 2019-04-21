@@ -1,0 +1,3 @@
+## Text
+
+Perez-Orive et al. (2002) focused on a population of interneurons in the LH [LHIs, a subtype of LH neurons (LHNs)] that extends processes to the MB and appears to be GABAergic. Kenyon cells (KCs) in the MB receive oscillatory waves of excitatory input directly from PNs; Perez-Orive et al. (2002) proposed the LHIs, which also receive this excitatory input from PNs, then feed it forward, after a brief delay, as inhibition to KCs. KCs would thus receive alternating waves of excitation from PNs and inhibition from LHIs, which together define temporal integration windows that help maintain the minimal and specific odor-elicited spiking observed in KCs.

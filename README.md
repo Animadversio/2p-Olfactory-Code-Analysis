@@ -2,13 +2,7 @@
 
 Collaborated work by Kaining Zhang, Pingchuan Ma, Binxu Wang
 
-<<<<<<< HEAD
-# TODO List
-
-
-
-Pingchuan says Shuang!
-=======
+# Trial structure
 Trial structure : for each stimuli 40ms before start, 15ms during stimuli, 60ms after stimuli.
 
 # TODO List
@@ -23,11 +17,11 @@ Trial structure : for each stimuli 40ms before start, 15ms during stimuli, 60ms 
   * [ ] Plot cluster distribution on z axis
 * [x] Draw the neurons population trajectory to the stimuli.(have done) (KN)
   * [x] SVD
-  * [ ] LLE / non linear dimension reduction
->>>>>>> af28ce7be32a53e943c96ff6c9454e5c51b29733
+  * [ ] LLE / Other non linear dimension reduction
 
 * [ ] Background research
-  * [ ] Anatomical location
-  * [ ] connectivity ~ Antennal lobe, Mushroom Body
+  * [x] Anatomical location
+  * [x] connectivity ~ Antennal lobe, Mushroom Body
+    * [ ] Laminar structure?????
   * [ ] Computational function??????? (Expansion / compression????)
   * [ ] Function in sensory transformation ?

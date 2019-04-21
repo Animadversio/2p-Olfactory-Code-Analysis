@@ -1,11 +1,13 @@
-load('data/raw_resp_GH146_e51_2.mat')
-spec_table = readtable('data/bnc_GH146_e51_2_LH.csv');
+load('raw_resp_GH146_e51_2.mat')
+spec_table = readtable('bnc_GH146_e51_2_LH.csv');
 
-ROI_name = who('-file','data/raw_resp_GH146_e51_2.mat');
-
-%  = spec_table(1); 
+ROI_name = who('-file','raw_resp_GH146_e51_2.mat');
 
 spec_table(1,'trl_startStk').Variables:spec_table(1,'trl_endStk').Variables
+%% 
+for i = 1:length(ROI_name)
+    
+end 
 %% 
 Trial_timepoints = 116;
 tic

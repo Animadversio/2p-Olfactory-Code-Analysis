@@ -6,9 +6,11 @@ spec_table(1,'trl_startStk').Variables:spec_table(1,'trl_endStk').Variables
 Trial_timepoints = 116;
 %% 
 z_slc_idx = {};
+ROI_depth = [];
 for z = 4:17
     idx_slc = find(contains(ROI_name, sprintf('slc%02d',z)));
     z_slc_idx{z-3} = idx_slc;
+    ROI_depth(idx_slc) = z;
 end 
 %% Trace matrix 
 TraceMat = zeros(length(ROI_name),length(blk02slc15_roi005));
@@ -103,29 +105,62 @@ for trial_j = 1:size(spec_table,1)
     vline(startpoint - 0.5,'w')
     vline(stimstart - 0.5,'r')
     vline(stimend - 0.5,'black')
-    text((stimstart + stimend)/2, -20, sorted_stim_name{trial_j})
+    text((stimstart + startpoint)/2, -20, sorted_stim_name{trial_j}, 'FontSize', 16)
 end
 for i = 1:length(z_slc_idx)
     hline(max(z_slc_idx{i}))
-    text(-80, mean(z_slc_idx{i}), sprintf('slice%02d',i + 3))
+    text(-90, mean(z_slc_idx{i}), sprintf('slice%02d',i + 3), 'FontSize', 16)
 end
 axis equal tight
+xticklabels([])
+yticklabels([])
+%% Dfof matrix
+DFoF_TraceMat = TraceMat;
+for trial_j = 1:size(spec_table,1)
+    startpoint = (spec_table(trial_j,'trl_startStk').Variables-1508);
+    endpoint = (spec_table(trial_j,'trl_endStk').Variables-1508);
+    stimstart = (spec_table(trial_j,'stim1_startStk').Variables-1508);
+    stimend = (spec_table(trial_j,'stim1_endStk').Variables-1508);
+    bsl = mean(DFoF_TraceMat(:,startpoint:stimstart), 2);
+    DFoF_TraceMat(:,startpoint:endpoint) = (DFoF_TraceMat(:,startpoint:endpoint) - bsl)./bsl;
+end
+%%
+figure(5);clf;
+imagesc(DFoF_TraceMat(:,sorted_timeid_list));hold on;
+colorbar()
+for trial_j = 1:size(spec_table,1)
+    startpoint = (spec_table(trial_j, 'trl_startStk').Variables-1508);
+    endpoint = (spec_table(trial_j, 'trl_endStk').Variables-1508);
+    stimstart = (spec_table(trial_j, 'stim1_startStk').Variables-1508);
+    stimend = (spec_table(trial_j,'stim1_endStk').Variables-1508);
+    vline(startpoint - 0.5,'w')
+    vline(stimstart - 0.5,'r')
+    vline(stimend - 0.5,'black')
+    text((stimstart + startpoint)/2, -20, sorted_stim_name{trial_j}, 'FontSize', 16)
+end
+for i = 1:length(z_slc_idx)
+    hline(max(z_slc_idx{i}))
+    text(-90, mean(z_slc_idx{i}), sprintf('slice%02d',i + 3), 'FontSize', 16)
+end
+axis equal tight
+xticklabels([])
+yticklabels([])
 %% Hierachical Clustering
-odor_name = 'EB04';
+odor_name = 'EA02';
 row_id = find(contains(spec_table.stim1, odor_name));
 startpoint = (spec_table.trl_startStk(row_id)-1508);
 endpoint = (spec_table.trl_endStk(row_id)-1508);
 stimstart = (spec_table.stim1_startStk(row_id)-1508);
 stimend = (spec_table.stim1_endStk(row_id)-1508);
 time_slice = startpoint:endpoint;
-cluster_input = zscore_TraceMat(:, time_slice);
+cluster_input = DFoF_TraceMat(:, time_slice);%zscore_TraceMat
 
 corr_mat = corrcoef(cluster_input');
 % dist_mat = pdist(cluster_input');
 figure(6)
 imagesc(corr_mat)
 
-Z = linkage(cluster_input, 'average', 'correlation');%'euclidean'
+Z = linkage(cluster_input, 'average', 'euclidean');%''correlation
 [~,T,perm_indx] = dendrogram(Z,0);
 figure(10)
 imagesc(cluster_input(perm_indx,:))
@@ -134,6 +169,131 @@ vline(stimend + 1.5 - startpoint,'black')
 text((stimstart + stimend)/2 - startpoint, -20, odor_name, 'FontSize', 16)
 %axis equal tight
 colorbar()
+%%
+Z = linkage(cluster_input, 'average', 'euclidean');
+Cluster_Num = 16;
+C = cluster(Z, 'maxclust', Cluster_Num);
+% Histogram
+% id_list = [];
+% roi_cnt_list = [];
+% for z = 4:17
+%     roi_cnt_list(z-3) = length(intersect(z_slc_idx{z-3}, id_list));
+% end 
+%%
+figure(22)
+for c_id = 1:Cluster_Num
+    subplot(Cluster_Num, 3, c_id*3 - 2)
+    plot(cluster_input(C==c_id,:)')
+    subplot(Cluster_Num, 3, c_id*3 - 1)
+    imagesc(cluster_input(C==c_id,:))
+    subplot(Cluster_Num, 3, c_id*3 )
+    bin_cnt = histcounts(ROI_depth(C==c_id), 3.5:17.5);
+    bar(4:17,bin_cnt)
+    if c_id ~= Cluster_Num
+        subplot(Cluster_Num, 3, c_id*3 - 2)
+        xticklabels([])
+        subplot(Cluster_Num, 3, c_id*3 - 1)
+        xticklabels([])
+        subplot(Cluster_Num, 3, c_id*3)
+        xticklabels([])
+    else
+        subplot(Cluster_Num, 3, c_id*3 - 2)
+        xlabel('time point')
+        subplot(Cluster_Num, 3, c_id*3 - 1)
+        xlabel('time point')
+        subplot(Cluster_Num, 3, c_id*3)
+        xlabel('zslice')
+    end
+end
+%%
+savefig(22, sprintf('%s_cluster%d.fig',odor_name,Cluster_Num))
+%%
+figure(23)
+vis_id_list = [1,2,4,6,7,8,9,10,12,13];%[2,3,4,6,8,9,10,11,12,13];%[1,2,4,6,7,9,10,11,12,13];%[3, 4, 5, 6, 8, 9, 11, 12, 15];
+for rel_c_id = 1:length(vis_id_list)
+    c_id = vis_id_list(rel_c_id);
+    subplot(length(vis_id_list), 3, rel_c_id*3 - 2)
+    plot(cluster_input(C==c_id,:)')
+    subplot(length(vis_id_list), 3, rel_c_id*3 - 1)
+    imagesc(cluster_input(C==c_id,:))
+    subplot(length(vis_id_list), 3, rel_c_id*3 )
+    bin_cnt = histcounts(ROI_depth(C==c_id), 3.5:17.5);
+    bar(4:17,bin_cnt)
+    if c_id ~= vis_id_list(end)
+        subplot(length(vis_id_list), 3, rel_c_id*3 - 2)
+        xticklabels([])
+        subplot(length(vis_id_list), 3, rel_c_id*3 - 1)
+        xticklabels([])
+        subplot(length(vis_id_list), 3, rel_c_id*3)
+        xticklabels([])
+    else
+        subplot(length(vis_id_list), 3, rel_c_id*3 - 2)
+        xlabel('time point')
+        subplot(length(vis_id_list), 3, rel_c_id*3 - 1)
+        xlabel('time point')
+        subplot(length(vis_id_list), 3, rel_c_id*3)
+        xlabel('zslice')
+    end
+end
+%%
+savefig(23, sprintf('%s_cluster%d_zoomin%d.fig',odor_name,Cluster_Num, length(vis_id_list)))
+
+
+%%
+cluster_input = DFoF_TraceMat;%zscore_TraceMat
+corr_mat = corrcoef(cluster_input');
+figure(6)
+% imagesc(corr_mat)
+
+Z = linkage(cluster_input, 'average', 'euclidean');%''correlation
+[~,T,perm_indx] = dendrogram(Z,0);
+figure(10)
+imagesc(cluster_input(perm_indx, sorted_timeid_list))
+for trial_j = 1:size(spec_table,1)
+    startpoint = (spec_table(trial_j, 'trl_startStk').Variables-1508);
+    endpoint = (spec_table(trial_j, 'trl_endStk').Variables-1508);
+    stimstart = (spec_table(trial_j, 'stim1_startStk').Variables-1508);
+    stimend = (spec_table(trial_j,'stim1_endStk').Variables-1508);
+    vline(startpoint - 0.5,'w')
+    vline(stimstart - 0.5,'r')
+    vline(stimend - 0.5,'black')
+    text((stimstart + startpoint)/2, -20, sorted_stim_name{trial_j}, 'FontSize', 16)
+end
+axis equal tight
+xticklabels([])
+yticklabels([])
+%%
+Z = linkage(cluster_input, 'average', 'euclidean');
+Cluster_Num = 18;
+C = cluster(Z, 'maxclust', Cluster_Num);
+figure(24)
+for c_id = 1:Cluster_Num
+    subplot(Cluster_Num, 3, c_id*3 - 2)
+    %subaxis(Cluster_Num, 3, c_id*3 - 2, 'Spacing', 0.03, 'Padding', 0, 'Margin', 0)
+    plot(cluster_input(C==c_id,sorted_timeid_list)')
+    subplot(Cluster_Num, 3, c_id*3 - 1)
+    %subaxis(Cluster_Num, 3, c_id*3 - 1, 'Spacing', 0.03, 'Padding', 0, 'Margin', 0)
+    imagesc(cluster_input(C==c_id,sorted_timeid_list))
+    subplot(Cluster_Num, 3, c_id*3 )
+    %subaxis(Cluster_Num, 3, c_id*3 - 0, 'Spacing', 0.03, 'Padding', 0, 'Margin', 0)
+    bin_cnt = histcounts(ROI_depth(C==c_id), 3.5:17.5);
+    bar(4:17,bin_cnt)
+    if c_id ~= Cluster_Num
+        subplot(Cluster_Num, 3, c_id*3 - 2)
+        xticklabels([])
+        subplot(Cluster_Num, 3, c_id*3 - 1)
+        xticklabels([])
+        subplot(Cluster_Num, 3, c_id*3)
+        xticklabels([])
+    else
+        subplot(Cluster_Num, 3, c_id*3 - 2)
+        xlabel('time point')
+        subplot(Cluster_Num, 3, c_id*3 - 1)
+        xlabel('time point')
+        subplot(Cluster_Num, 3, c_id*3)
+        xlabel('zslice')
+    end
+end
 %% 
 Trial_timepoints = 116;
 tic

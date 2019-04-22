@@ -30,3 +30,5 @@ Trial structure : for each stimuli 40ms before start, 15ms during stimuli, 60ms 
     * [ ] Laminar structure?????
   * [ ] Computational function??????? (Expansion / compression????)
   * [ ] Function in sensory transformation ?
+
+Spatial Temporal Structure of Lateral Horn Input 

@@ -20,8 +20,18 @@ A = who('blk*');
 Big_Matrix = [];
 for i = 1:size(A)
     temp = eval(A{i});
-    Big_Matrix = [Big_Matrix;temp];
+    Big_Matrix = [Big_Matrix;temp];  
 end
+
+neuron_depth = zeros(length(A),1);
+neuronnumbydepth = zeros(14,1);
+
+for z = 4:17
+    idx_slc = find(contains(A, sprintf('slc%02d',z)));
+    neuron_depth(idx_slc) = z;
+    neuronnumbydepth(z-3) = numel(idx_slc);
+end 
+
 preodor = [startpoint(1):(endpoint(1)+10)];
 trial1 = [startpoint(1),endpoint(1)];
 alltrial = [startpoint(1),endpoint(end)];
@@ -32,6 +42,7 @@ Matrix1 = Big_Matrix(:,alltrial(1):alltrial(2));
 baseline = mean(Big_Matrix(:,preodor),2);
 baseline = repmat(baseline,1,size(Matrix1,2));
 Matrix1 = Matrix1 - baseline;
+Matrix1 = zscore(Matrix1,0,2);
 
 figure;
 imagesc(Matrix1);hold on;
@@ -59,7 +70,7 @@ for i = 1:length(startpoint)
     trialtraj{i} = trajectory(:,startpoint(i):endpoint(i));
 end
 figure;
-plotstimuli = [2,5];
+plotstimuli = [11,13];
 for i = plotstimuli%length(startpoint)
     temp_plot = trialtraj{i};
 %     if i == 13
@@ -68,6 +79,43 @@ for i = plotstimuli%length(startpoint)
     plot3(temp_plot(1,:),temp_plot(2,:),temp_plot(3,:)); hold on;
 end
 legend(stimname(plotstimuli));
+
+% PCA and clustering (K-mean)
+Num_clusters = 13;
+[coeff,score,latent] = pca(Matrix1);
+pcascore = score(:,1:3);
+clusterID = kmeans(score(:,1:10),Num_clusters);
+figure;
+subplot(1,2,1);
+scatter3(pcascore(:,1), pcascore(:,2),pcascore(:,3), 10, clusterID);
+xlabel('PC1');
+ylabel('PC2');
+zlabel('PC3');
+
+% evaluate cluster
+subplot(1,2,2);
+silhouette(Matrix1,clusterID);
+
+% sort by clusterID
+[~,I] = sort(clusterID);
+clusterID = clusterID(I,:);
+Sorted_Matrix = Matrix1(I,:);
+Sorted_neurondepth = neuron_depth(I,:);
+figure;
+imagesc(Sorted_Matrix); hold on;
+for i = 1:length(startpoint)
+    plot([startpoint(i),startpoint(i)], get(gca, 'Ylim'),'k');
+end
+
+% plot each cluster by the depth
+figure;
+for i = 1:Num_clusters
+    subplot(4,4,i);
+    temp = Sorted_neurondepth(clusterID == i);
+    N = histcounts(temp,3.5:17.5);
+    bar(4:17,N./neuronnumbydepth');
+    title(['Cluster ID = ', mat2str(i)]);
+end
 
 
 % figure;
